@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JanZ Code Explainer - LLaMA 3.3 70B</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 1200px;
+        width: 100%;
+        padding: 40px;
+        animation: fadeIn 0.5s ease-in;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      h1 {
+        color: #333;
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .subtitle {
+        color: #666;
+        font-size: 1.1em;
+        margin-bottom: 5px;
+      }
+
+      .model-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9em;
+        font-weight: bold;
+        margin-top: 10px;
+      }
+
+      .input-section {
+        margin-bottom: 30px;
+      }
+
+      label {
+        display: block;
+        color: #333;
+        font-weight: 600;
+        margin-bottom: 10px;
+        font-size: 1.1em;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 250px;
+        padding: 15px;
+        border: 2px solid #ddd;
+        border-radius: 10px;
+        font-family: "Consolas", "Monaco", "Courier New", monospace;
+        font-size: 14px;
+        resize: vertical;
+        transition: border-color 0.3s, box-shadow 0.3s;
+        background: #f9f9f9;
+      }
+
+      textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        background: white;
+      }
+
+      .button-container {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 30px;
+      }
+
+      button {
+        flex: 1;
+        padding: 15px 30px;
+        font-size: 1.1em;
+        font-weight: 600;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .explain-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      .explain-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+      }
+
+      .explain-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .clear-btn {
+        background: #f0f0f0;
+        color: #666;
+      }
+
+      .clear-btn:hover {
+        background: #e0e0e0;
+      }
+
+      .output-section {
+        display: none;
+        animation: slideIn 0.4s ease-out;
+      }
+
+      .output-section.visible {
+        display: block;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .output-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .output-title {
+        color: #333;
+        font-weight: 600;
+        font-size: 1.1em;
+      }
+
+      .copy-btn {
+        padding: 8px 16px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9em;
+        transition: background 0.3s;
+      }
+
+      .copy-btn:hover {
+        background: #5568d3;
+      }
+
+      .explanation-box {
+        background: #f9f9f9;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 20px;
+        line-height: 1.8;
+        color: #333;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        max-height: 600px;
+        overflow-y: auto;
+      }
+
+      .explanation-box h1,
+      .explanation-box h2,
+      .explanation-box h3 {
+        color: #667eea;
+        margin-top: 20px;
+        margin-bottom: 10px;
+      }
+
+      .explanation-box h1 {
+        font-size: 1.5em;
+      }
+
+      .explanation-box h2 {
+        font-size: 1.3em;
+      }
+
+      .explanation-box h3 {
+        font-size: 1.1em;
+      }
+
+      .explanation-box code {
+        background: #e8e8e8;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: "Consolas", "Monaco", "Courier New", monospace;
+      }
+
+      .explanation-box ul,
+      .explanation-box ol {
+        margin-left: 25px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+
+      .explanation-box li {
+        margin-bottom: 5px;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        padding: 40px;
+      }
+
+      .loading.visible {
+        display: block;
+      }
+
+      .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .loading-text {
+        color: #666;
+        font-size: 1.1em;
+      }
+
+      .error {
+        background: #fee;
+        border: 2px solid #fcc;
+        border-radius: 10px;
+        padding: 20px;
+        color: #c33;
+        display: none;
+        margin-top: 20px;
+      }
+
+      .error.visible {
+        display: block;
+        animation: slideIn 0.4s ease-out;
+      }
+
+      .error-title {
+        font-weight: 600;
+        margin-bottom: 10px;
+        font-size: 1.1em;
+      }
+
+      .examples {
+        margin-top: 30px;
+        padding-top: 30px;
+        border-top: 2px solid #e0e0e0;
+      }
+
+      .examples-title {
+        color: #333;
+        font-size: 1.2em;
+        margin-bottom: 15px;
+        font-weight: 600;
+      }
+
+      .example-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .example-btn {
+        padding: 10px 20px;
+        background: white;
+        border: 2px solid #667eea;
+        color: #667eea;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.9em;
+        transition: all 0.3s;
+      }
+
+      .example-btn:hover {
+        background: #667eea;
+        color: white;
+      }
+
+      footer {
+        margin-top: 40px;
+        text-align: center;
+        color: #999;
+        font-size: 0.9em;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 20px;
+        }
+
+        h1 {
+          font-size: 1.8em;
+        }
+
+        .button-container {
+          flex-direction: column;
+        }
+
+        .example-buttons {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>🤖 JanZ Code Explainer</h1>
+        <p class="subtitle">Understand any code in seconds</p>
+        <span class="model-badge">Powered by LLaMA 3.3 70B Versatile</span>
+      </header>
+
+      <div class="input-section">
+        <label for="codeInput">📝 Paste your code here:</label>
+        <textarea
+          id="codeInput"
+          placeholder="# Paste any code snippet here...
+# Example:
+def quicksort(arr):
+    if len(arr) <= 1:
+        return arr
+    pivot = arr[len(arr) // 2]
+    left = [x for x in arr if x < pivot]
+    middle = [x for x in arr if x == pivot]
+    right = [x for x in arr if x > pivot]
+    return quicksort(left) + middle + quicksort(right)"
+        ></textarea>
+      </div>
+
+      <div class="button-container">
+        <button class="explain-btn" id="explainBtn" onclick="explainCode()">
+          <span>✨ Explain Code</span>
+        </button>
+        <button class="clear-btn" onclick="clearAll()">
+          <span>🗑️ Clear</span>
+        </button>
+      </div>
+
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p class="loading-text">Analyzing code with LLaMA 3.3 70B...</p>
+      </div>
+
+      <div class="error" id="error">
+        <div class="error-title">❌ Error</div>
+        <p id="errorMessage"></p>
+      </div>
+
+      <div class="output-section" id="outputSection">
+        <div class="output-header">
+          <span class="output-title">💡 Explanation:</span>
+          <button class="copy-btn" onclick="copyExplanation()">📋 Copy</button>
+        </div>
+        <div class="explanation-box" id="explanation"></div>
+      </div>
+
+      <div class="examples">
+        <p class="examples-title">🎯 Try an example:</p>
+        <div class="example-buttons">
+          <button class="example-btn" onclick="loadExample('python')">
+            Python
+          </button>
+          <button class="example-btn" onclick="loadExample('javascript')">
+            JavaScript
+          </button>
+          <button class="example-btn" onclick="loadExample('java')">
+            Java
+          </button>
+          <button class="example-btn" onclick="loadExample('cpp')">C++</button>
+        </div>
+      </div>
+
+      <footer>
+        <p>Built with FastAPI + LLaMA 3.3 70B via Groq</p>
+      </footer>
+    </div>
+
+    <script>
+      const API_URL = "http://localhost:8000/api/explain";
+
+      const examples = {
+        python: `def binary_search(arr, target):
+    left, right = 0, len(arr) - 1
+    while left <= right:
+        mid = (left + right) // 2
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+    return -1`,
+
+        javascript: `async function fetchUserData(userId) {
+    try {
+        const response = await fetch(\`/api/users/\${userId}\`);
+        if (!response.ok) {
+            throw new Error('User not found');
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error:', error);
+        return null;
+    }
+}`,
+
+        java: `public class BubbleSort {
+    public static void bubbleSort(int[] arr) {
+        int n = arr.length;
+        for (int i = 0; i < n - 1; i++) {
+            for (int j = 0; j < n - i - 1; j++) {
+                if (arr[j] > arr[j + 1]) {
+                    int temp = arr[j];
+                    arr[j] = arr[j + 1];
+                    arr[j + 1] = temp;
+                }
+            }
+        }
+    }
+}`,
+
+        cpp: `#include <iostream>
+#include <vector>
+
+int fibonacci(int n) {
+    if (n <= 1) return n;
+    
+    std::vector<int> dp(n + 1);
+    dp[0] = 0;
+    dp[1] = 1;
+    
+    for (int i = 2; i <= n; i++) {
+        dp[i] = dp[i-1] + dp[i-2];
+    }
+    
+    return dp[n];
+}`,
+      };
+
+      function loadExample(language) {
+        document.getElementById("codeInput").value = examples[language];
+        hideError();
+        hideOutput();
+      }
+
+      function clearAll() {
+        document.getElementById("codeInput").value = "";
+        hideError();
+        hideOutput();
+      }
+
+      function showLoading() {
+        document.getElementById("loading").classList.add("visible");
+        document.getElementById("explainBtn").disabled = true;
+      }
+
+      function hideLoading() {
+        document.getElementById("loading").classList.remove("visible");
+        document.getElementById("explainBtn").disabled = false;
+      }
+
+      function showError(message) {
+        document.getElementById("errorMessage").textContent = message;
+        document.getElementById("error").classList.add("visible");
+      }
+
+      function hideError() {
+        document.getElementById("error").classList.remove("visible");
+      }
+
+      function showOutput(explanation) {
+        const explanationDiv = document.getElementById("explanation");
+
+        // Convert markdown-style formatting to HTML
+        let formatted = explanation
+          .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+          .replace(/\*(.+?)\*/g, "<em>$1</em>")
+          .replace(/`(.+?)`/g, "<code>$1</code>");
+
+        explanationDiv.innerHTML = formatted;
+        document.getElementById("outputSection").classList.add("visible");
+
+        // Scroll to output
+        document
+          .getElementById("outputSection")
+          .scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+
+      function hideOutput() {
+        document.getElementById("outputSection").classList.remove("visible");
+      }
+
+      async function explainCode() {
+        const code = document.getElementById("codeInput").value.trim();
+
+        if (!code) {
+          showError("Please paste some code to explain.");
+          return;
+        }
+
+        hideError();
+        hideOutput();
+        showLoading();
+
+        try {
+          const response = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ code: code }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            showOutput(data.explanation);
+          } else {
+            showError(
+              data.detail || "Failed to generate explanation. Please try again."
+            );
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          showError(
+            "Could not connect to the server. Make sure the backend is running on http://localhost:8000"
+          );
+        } finally {
+          hideLoading();
+        }
+      }
+
+      function copyExplanation() {
+        const explanation = document.getElementById("explanation").innerText;
+        navigator.clipboard.writeText(explanation).then(() => {
+          const btn = event.target;
+          const originalText = btn.textContent;
+          btn.textContent = "✓ Copied!";
+          setTimeout(() => {
+            btn.textContent = originalText;
+          }, 2000);
+        });
+      }
+
+      // Allow Enter to submit (with Ctrl/Cmd modifier to avoid interfering with newlines)
+      document.getElementById("codeInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+          explainCode();
+        }
+      });
+    </script>
+  </body>
+</html>
