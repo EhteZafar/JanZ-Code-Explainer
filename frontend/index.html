@@ -74,6 +74,74 @@
         margin-top: 10px;
       }
 
+      .phase-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 6px 14px;
+        border-radius: 15px;
+        font-size: 0.85em;
+        font-weight: bold;
+        margin-left: 10px;
+      }
+
+      .mode-selector {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 20px;
+        margin-bottom: 20px;
+      }
+
+      .mode-label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 12px 20px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        transition: all 0.3s;
+        background: white;
+      }
+
+      .mode-label:hover {
+        border-color: #667eea;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+      }
+
+      .mode-label input[type="radio"] {
+        margin-right: 10px;
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+      }
+
+      .mode-label input[type="radio"]:checked + .mode-option {
+        color: #667eea;
+      }
+
+      .mode-label:has(input:checked) {
+        border-color: #667eea;
+        background: #f5f7ff;
+      }
+
+      .mode-option {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      .mode-option strong {
+        font-size: 1em;
+        color: #333;
+      }
+
+      .mode-option small {
+        font-size: 0.85em;
+        color: #666;
+      }
+
       .input-section {
         margin-bottom: 30px;
       }
@@ -372,7 +440,25 @@
         <h1>🤖 JanZ Code Explainer</h1>
         <p class="subtitle">Understand any code in seconds</p>
         <span class="model-badge">Powered by LLaMA 3.3 70B Versatile</span>
+        <div class="phase-badge">Phase 2: RAG-Enhanced</div>
       </header>
+
+      <div class="mode-selector">
+        <label class="mode-label">
+          <input type="radio" name="mode" value="basic" checked />
+          <span class="mode-option">
+            <strong>Basic Mode</strong>
+            <small>Standard AI explanation</small>
+          </span>
+        </label>
+        <label class="mode-label">
+          <input type="radio" name="mode" value="rag" />
+          <span class="mode-option">
+            <strong>RAG Mode</strong>
+            <small>Enhanced with similar examples</small>
+          </span>
+        </label>
+      </div>
 
       <div class="input-section">
         <label for="codeInput">📝 Paste your code here:</label>
@@ -440,7 +526,8 @@ def quicksort(arr):
     </div>
 
     <script>
-      const API_URL = "http://localhost:8000/api/explain";
+      const API_URL_BASIC = "http://localhost:8000/api/explain";
+      const API_URL_RAG = "http://localhost:8000/api/explain-rag";
 
       const examples = {
         python: `def binary_search(arr, target):
@@ -533,7 +620,7 @@ int fibonacci(int n) {
         document.getElementById("error").classList.remove("visible");
       }
 
-      function showOutput(explanation) {
+      function showOutput(explanation, retrievedExamples = null) {
         const explanationDiv = document.getElementById("explanation");
 
         // Convert markdown-style formatting to HTML
@@ -541,6 +628,29 @@ int fibonacci(int n) {
           .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
           .replace(/\*(.+?)\*/g, "<em>$1</em>")
           .replace(/`(.+?)`/g, "<code>$1</code>");
+
+        // Add retrieved examples info if using RAG mode
+        if (retrievedExamples && retrievedExamples.length > 0) {
+          let examplesHTML =
+            '<div style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #667eea;">';
+          examplesHTML +=
+            '<div style="font-weight: bold; color: #667eea; margin-bottom: 10px;">📚 Retrieved Similar Examples:</div>';
+
+          retrievedExamples.forEach((ex, idx) => {
+            examplesHTML += `<div style="margin-left: 10px; margin-bottom: 8px; font-size: 0.9em;">`;
+            examplesHTML += `<strong>${
+              idx + 1
+            }.</strong> ${ex.language.toUpperCase()} - ${ex.category}`;
+            if (ex.subcategory) examplesHTML += ` (${ex.subcategory})`;
+            examplesHTML += ` <span style="background: #667eea; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">${(
+              ex.relevance_score * 100
+            ).toFixed(0)}% match</span>`;
+            examplesHTML += `</div>`;
+          });
+
+          examplesHTML += "</div>";
+          formatted = examplesHTML + formatted;
+        }
 
         explanationDiv.innerHTML = formatted;
         document.getElementById("outputSection").classList.add("visible");
@@ -563,12 +673,16 @@ int fibonacci(int n) {
           return;
         }
 
+        // Get selected mode
+        const mode = document.querySelector('input[name="mode"]:checked').value;
+        const apiUrl = mode === "rag" ? API_URL_RAG : API_URL_BASIC;
+
         hideError();
         hideOutput();
         showLoading();
 
         try {
-          const response = await fetch(API_URL, {
+          const response = await fetch(apiUrl, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -579,7 +693,8 @@ int fibonacci(int n) {
           const data = await response.json();
 
           if (response.ok) {
-            showOutput(data.explanation);
+            // RAG mode returns retrieved_examples
+            showOutput(data.explanation, data.retrieved_examples || null);
           } else {
             showError(
               data.detail || "Failed to generate explanation. Please try again."

@@ -1,0 +1,4 @@
+# Phase 2 Requirements - Add to requirements.txt
+
+chromadb==0.4.22
+sentence-transformers==2.3.1

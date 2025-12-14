@@ -52,12 +52,14 @@ Provide a well-structured, educational explanation that helps the reader underst
     return prompt
 
 
-async def get_code_explanation(code: str) -> dict:
+async def get_code_explanation(code: str, custom_prompt: str = None, use_rag: bool = False) -> dict:
     """
     Sends code to LLaMA 3.3 70B via Groq API and returns explanation.
     
     Args:
         code: The code snippet to explain
+        custom_prompt: Optional custom prompt (used for RAG-enhanced mode)
+        use_rag: Whether this is a RAG-enhanced request (affects prompting)
         
     Returns:
         Dictionary with explanation or error message
@@ -88,15 +90,20 @@ async def get_code_explanation(code: str) -> dict:
                 "error": "GROQ_API_KEY not configured. Please check your .env file."
             }
         
-        # Create prompt
-        prompt = create_explanation_prompt(code)
+        # Create prompt (use custom prompt for RAG mode, default for basic mode)
+        if custom_prompt:
+            prompt = custom_prompt
+            system_message = "You are an expert programming instructor with deep knowledge across multiple languages and paradigms. Provide clear, accurate, and educational code explanations using the context and examples provided."
+        else:
+            prompt = create_explanation_prompt(code)
+            system_message = "You are an expert programming instructor who provides clear, accurate, and educational code explanations."
         
         # Call Groq API
         chat_completion = client.chat.completions.create(
             messages=[
                 {
                     "role": "system",
-                    "content": "You are an expert programming instructor who provides clear, accurate, and educational code explanations."
+                    "content": system_message
                 },
                 {
                     "role": "user",
@@ -104,7 +111,7 @@ async def get_code_explanation(code: str) -> dict:
                 }
             ],
             model=MODEL_NAME,
-            temperature=TEMPERATURE,
+            temperature=TEMPERATURE if not use_rag else 0.6,  # Slightly lower temperature for RAG
             max_tokens=MAX_TOKENS,
             timeout=TIMEOUT,
             top_p=1,
