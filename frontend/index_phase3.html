@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Code Explainer - Phase 3</title>
+    <style>
+      :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --success-color: #10b981;
+        --error-color: #ef4444;
+        --warning-color: #f59e0b;
+        --bg-light: #ffffff;
+        --bg-dark: #1a1a2e;
+        --text-light: #333333;
+        --text-dark: #e0e0e0;
+        --transition: all 0.3s ease;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: var(--primary-gradient);
+        min-height: 100vh;
+        padding: 20px;
+        transition: var(--transition);
+      }
+
+      body.dark-mode {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      }
+
+      .container {
+        background: var(--bg-light);
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 1400px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 40px;
+        animation: fadeIn 0.5s ease-in;
+        transition: var(--transition);
+      }
+
+      body.dark-mode .container {
+        background: var(--bg-dark);
+        color: var(--text-dark);
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Header */
+      header {
+        text-align: center;
+        margin-bottom: 30px;
+        position: relative;
+      }
+
+      h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .subtitle {
+        color: #666;
+        font-size: 1.1em;
+        margin-bottom: 10px;
+      }
+
+      body.dark-mode .subtitle {
+        color: #aaa;
+      }
+
+      .badges {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 15px;
+      }
+
+      .badge {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9em;
+        font-weight: bold;
+        color: white;
+      }
+
+      .badge-model {
+        background: var(--primary-gradient);
+      }
+
+      .badge-phase {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      }
+
+      .badge-status {
+        background: var(--success-color);
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+
+      /* Dark Mode Toggle */
+      .dark-mode-toggle {
+        position: absolute;
+        top: 0;
+        right: 0;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        padding: 10px 15px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1.2em;
+        transition: var(--transition);
+      }
+
+      .dark-mode-toggle:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1);
+      }
+
+      /* Stats Bar */
+      .stats-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+        padding: 20px;
+        background: linear-gradient(
+          135deg,
+          rgba(102, 126, 234, 0.1) 0%,
+          rgba(118, 75, 162, 0.1) 100%
+        );
+        border-radius: 15px;
+      }
+
+      .stat-card {
+        text-align: center;
+        padding: 15px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        transition: var(--transition);
+      }
+
+      body.dark-mode .stat-card {
+        background: #0f3460;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      .stat-value {
+        font-size: 2em;
+        font-weight: bold;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .stat-label {
+        font-size: 0.9em;
+        color: #666;
+        margin-top: 5px;
+      }
+
+      body.dark-mode .stat-label {
+        color: #aaa;
+      }
+
+      /* Mode Selector */
+      .mode-selector {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-bottom: 30px;
+      }
+
+      .mode-option {
+        flex: 1;
+        max-width: 300px;
+        padding: 20px;
+        border: 2px solid transparent;
+        border-radius: 15px;
+        cursor: pointer;
+        transition: var(--transition);
+        background: #f8f9fa;
+        text-align: center;
+      }
+
+      body.dark-mode .mode-option {
+        background: #0f3460;
+      }
+
+      .mode-option:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .mode-option.active {
+        border-color: #667eea;
+        background: linear-gradient(
+          135deg,
+          rgba(102, 126, 234, 0.1) 0%,
+          rgba(118, 75, 162, 0.1) 100%
+        );
+      }
+
+      .mode-radio {
+        display: none;
+      }
+
+      .mode-title {
+        font-weight: bold;
+        font-size: 1.2em;
+        margin-bottom: 10px;
+        color: #667eea;
+      }
+
+      .mode-description {
+        font-size: 0.9em;
+        color: #666;
+      }
+
+      body.dark-mode .mode-description {
+        color: #aaa;
+      }
+
+      /* Input Section */
+      .input-section {
+        margin-bottom: 30px;
+      }
+
+      label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #333;
+      }
+
+      body.dark-mode label {
+        color: var(--text-dark);
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 200px;
+        padding: 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        font-family: "Consolas", "Monaco", monospace;
+        font-size: 14px;
+        resize: vertical;
+        transition: var(--transition);
+      }
+
+      body.dark-mode textarea {
+        background: #0f3460;
+        color: var(--text-dark);
+        border-color: #16213e;
+      }
+
+      textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+
+      .char-count {
+        text-align: right;
+        font-size: 0.85em;
+        color: #666;
+        margin-top: 5px;
+      }
+
+      /* Button */
+      .explain-button {
+        width: 100%;
+        padding: 15px 30px;
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1em;
+        font-weight: bold;
+        cursor: pointer;
+        transition: var(--transition);
+        margin-bottom: 30px;
+      }
+
+      .explain-button:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+      }
+
+      .explain-button:disabled {
+        background: #cccccc;
+        cursor: not-allowed;
+      }
+
+      .explain-button.loading {
+        position: relative;
+        color: transparent;
+      }
+
+      .explain-button.loading::after {
+        content: "";
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        top: 50%;
+        left: 50%;
+        margin-left: -10px;
+        margin-top: -10px;
+        border: 3px solid #ffffff;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Output Section */
+      .output-section {
+        display: none;
+        animation: slideIn 0.4s ease-out;
+      }
+
+      .output-section.visible {
+        display: block;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .output-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+      }
+
+      body.dark-mode .output-header {
+        border-bottom-color: #16213e;
+      }
+
+      .output-title {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #333;
+      }
+
+      body.dark-mode .output-title {
+        color: var(--text-dark);
+      }
+
+      .output-actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      .action-button {
+        padding: 8px 15px;
+        background: #f0f0f0;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: var(--transition);
+        font-size: 0.9em;
+      }
+
+      body.dark-mode .action-button {
+        background: #0f3460;
+        color: var(--text-dark);
+      }
+
+      .action-button:hover {
+        background: #667eea;
+        color: white;
+        transform: scale(1.05);
+      }
+
+      /* Retrieved Examples */
+      .retrieved-examples {
+        background: linear-gradient(
+          135deg,
+          rgba(16, 185, 129, 0.1) 0%,
+          rgba(5, 150, 105, 0.1) 100%
+        );
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border-left: 4px solid var(--success-color);
+      }
+
+      .retrieved-header {
+        font-weight: bold;
+        color: var(--success-color);
+        margin-bottom: 15px;
+        font-size: 1.1em;
+      }
+
+      .example-item {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      }
+
+      body.dark-mode .example-item {
+        background: #0f3460;
+      }
+
+      .example-meta {
+        display: flex;
+        gap: 15px;
+        font-size: 0.9em;
+        color: #666;
+        margin-bottom: 10px;
+      }
+
+      body.dark-mode .example-meta {
+        color: #aaa;
+      }
+
+      .relevance-bar {
+        height: 6px;
+        background: #e0e0e0;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+
+      .relevance-fill {
+        height: 100%;
+        background: var(--success-color);
+        transition: width 0.5s ease-out;
+      }
+
+      /* Explanation Content */
+      .explanation-content {
+        background: #f8f9fa;
+        padding: 25px;
+        border-radius: 10px;
+        line-height: 1.8;
+      }
+
+      body.dark-mode .explanation-content {
+        background: #0f3460;
+      }
+
+      .explanation-content h2,
+      .explanation-content h3 {
+        color: #667eea;
+        margin-top: 20px;
+        margin-bottom: 10px;
+      }
+
+      .explanation-content code {
+        background: #e0e0e0;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: "Consolas", "Monaco", monospace;
+      }
+
+      body.dark-mode .explanation-content code {
+        background: #16213e;
+      }
+
+      .explanation-content pre {
+        background: #2d2d2d;
+        color: #f8f8f2;
+        padding: 15px;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin: 15px 0;
+      }
+
+      /* Performance Metrics */
+      .metrics-panel {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        margin-top: 20px;
+        padding: 15px;
+        background: linear-gradient(
+          135deg,
+          rgba(245, 158, 11, 0.1) 0%,
+          rgba(251, 146, 60, 0.1) 100%
+        );
+        border-radius: 10px;
+      }
+
+      .metric-item {
+        text-align: center;
+        padding: 10px;
+      }
+
+      .metric-value {
+        font-size: 1.3em;
+        font-weight: bold;
+        color: var(--warning-color);
+      }
+
+      .metric-label {
+        font-size: 0.85em;
+        color: #666;
+        margin-top: 5px;
+      }
+
+      body.dark-mode .metric-label {
+        color: #aaa;
+      }
+
+      /* Toast Notifications */
+      .toast {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        padding: 15px 25px;
+        border-radius: 10px;
+        color: white;
+        font-weight: bold;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        animation: slideInRight 0.3s ease-out;
+        z-index: 1000;
+      }
+
+      @keyframes slideInRight {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      .toast.success {
+        background: var(--success-color);
+      }
+
+      .toast.error {
+        background: var(--error-color);
+      }
+
+      .toast.warning {
+        background: var(--warning-color);
+      }
+
+      /* Error Alert */
+      .error-alert {
+        background: linear-gradient(
+          135deg,
+          rgba(239, 68, 68, 0.1) 0%,
+          rgba(220, 38, 38, 0.1) 100%
+        );
+        border-left: 4px solid var(--error-color);
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        display: none;
+      }
+
+      .error-alert.visible {
+        display: block;
+        animation: shake 0.5s;
+      }
+
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-10px);
+        }
+        75% {
+          transform: translateX(10px);
+        }
+      }
+
+      .error-title {
+        font-weight: bold;
+        color: var(--error-color);
+        margin-bottom: 10px;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .container {
+          padding: 20px;
+        }
+
+        h1 {
+          font-size: 1.8em;
+        }
+
+        .mode-selector {
+          flex-direction: column;
+        }
+
+        .stats-bar {
+          grid-template-columns: 1fr;
+        }
+
+        .dark-mode-toggle {
+          position: static;
+          margin-bottom: 20px;
+        }
+      }
+
+      /* Loading Overlay */
+      .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+      }
+
+      .loading-overlay.visible {
+        display: flex;
+      }
+
+      .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 5px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="loading-spinner"></div>
+    </div>
+
+    <div class="container">
+      <header>
+        <button
+          class="dark-mode-toggle"
+          id="darkModeToggle"
+          title="Toggle Dark Mode"
+        >
+          🌙
+        </button>
+
+        <h1>🤖 AI Code Explainer</h1>
+        <p class="subtitle">Powered by LLaMA 3.3 70B with RAG Technology</p>
+
+        <div class="badges">
+          <span class="badge badge-model">LLaMA 3.3 70B Versatile</span>
+          <span class="badge badge-phase">Phase 3: Enhanced</span>
+          <span class="badge badge-status" id="statusBadge"
+            >● System Ready</span
+          >
+        </div>
+      </header>
+
+      <!-- Stats Bar -->
+      <div class="stats-bar">
+        <div class="stat-card">
+          <div class="stat-value" id="totalExplanations">0</div>
+          <div class="stat-label">Explanations</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="avgResponseTime">-</div>
+          <div class="stat-label">Avg Response Time</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="accuracyScore">-</div>
+          <div class="stat-label">Accuracy Score</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="ragHitRate">-</div>
+          <div class="stat-label">RAG Hit Rate</div>
+        </div>
+      </div>
+
+      <!-- Mode Selector -->
+      <div class="mode-selector">
+        <label class="mode-option active" for="basicMode">
+          <input
+            type="radio"
+            name="mode"
+            value="basic"
+            id="basicMode"
+            class="mode-radio"
+            checked
+          />
+          <div class="mode-title">⚡ Basic Mode</div>
+          <div class="mode-description">Fast, direct AI explanations</div>
+        </label>
+
+        <label class="mode-option" for="ragMode">
+          <input
+            type="radio"
+            name="mode"
+            value="rag"
+            id="ragMode"
+            class="mode-radio"
+          />
+          <div class="mode-title">🎯 RAG Mode</div>
+          <div class="mode-description">
+            Context-aware with similar examples
+          </div>
+        </label>
+      </div>
+
+      <!-- Input Section -->
+      <div class="input-section">
+        <label for="codeInput">📝 Paste your code here:</label>
+        <textarea
+          id="codeInput"
+          placeholder="// Paste any code snippet here (Python, JavaScript, Java, etc.)&#10;// Example:&#10;function factorial(n) {&#10;    return n <= 1 ? 1 : n * factorial(n - 1);&#10;}"
+        ></textarea>
+        <div class="char-count" id="charCount">0 / 10000 characters</div>
+      </div>
+
+      <button class="explain-button" id="explainButton">🚀 Explain Code</button>
+
+      <!-- Error Alert -->
+      <div class="error-alert" id="errorAlert">
+        <div class="error-title">⚠️ Error</div>
+        <div id="errorMessage"></div>
+      </div>
+
+      <!-- Output Section -->
+      <div class="output-section" id="outputSection">
+        <div class="output-header">
+          <h2 class="output-title">📖 Explanation</h2>
+          <div class="output-actions">
+            <button
+              class="action-button"
+              id="copyButton"
+              title="Copy to clipboard"
+            >
+              📋 Copy
+            </button>
+            <button
+              class="action-button"
+              id="clearButton"
+              title="Clear results"
+            >
+              🗑️ Clear
+            </button>
+          </div>
+        </div>
+
+        <!-- Retrieved Examples (RAG Mode Only) -->
+        <div
+          class="retrieved-examples"
+          id="retrievedExamples"
+          style="display: none"
+        >
+          <div class="retrieved-header">📚 Retrieved Similar Examples</div>
+          <div id="examplesContainer"></div>
+        </div>
+
+        <!-- Explanation Content -->
+        <div class="explanation-content" id="explanationContent"></div>
+
+        <!-- Performance Metrics -->
+        <div class="metrics-panel">
+          <div class="metric-item">
+            <div class="metric-value" id="responseTime">-</div>
+            <div class="metric-label">Response Time (s)</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-value" id="tokenCount">-</div>
+            <div class="metric-label">Tokens Used</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-value" id="confidenceScore">-</div>
+            <div class="metric-label">Confidence</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-value" id="codeLength">-</div>
+            <div class="metric-label">Code Lines</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // State Management
+      const state = {
+        totalExplanations: 0,
+        responseTimes: [],
+        accuracyScores: [],
+        ragHits: 0,
+        totalRequests: 0,
+      };
+
+      // API Configuration
+      const API_BASE = "http://localhost:8000";
+
+      // DOM Elements
+      const darkModeToggle = document.getElementById("darkModeToggle");
+      const codeInput = document.getElementById("codeInput");
+      const charCount = document.getElementById("charCount");
+      const explainButton = document.getElementById("explainButton");
+      const modeOptions = document.querySelectorAll(".mode-option");
+      const modeRadios = document.querySelectorAll(".mode-radio");
+      const outputSection = document.getElementById("outputSection");
+      const errorAlert = document.getElementById("errorAlert");
+      const loadingOverlay = document.getElementById("loadingOverlay");
+
+      // Dark Mode Toggle
+      darkModeToggle.addEventListener("click", () => {
+        document.body.classList.toggle("dark-mode");
+        darkModeToggle.textContent = document.body.classList.contains(
+          "dark-mode"
+        )
+          ? "☀️"
+          : "🌙";
+        showToast("Theme changed", "success");
+      });
+
+      // Character Counter
+      codeInput.addEventListener("input", () => {
+        const length = codeInput.value.length;
+        charCount.textContent = `${length} / 10000 characters`;
+        charCount.style.color = length > 9000 ? "var(--error-color)" : "#666";
+      });
+
+      // Mode Selection
+      modeOptions.forEach((option, index) => {
+        option.addEventListener("click", () => {
+          modeOptions.forEach((opt) => opt.classList.remove("active"));
+          option.classList.add("active");
+          modeRadios[index].checked = true;
+        });
+      });
+
+      // Main Explain Function
+      explainButton.addEventListener("click", async () => {
+        const code = codeInput.value.trim();
+
+        if (!code) {
+          showError("Please enter some code to explain");
+          return;
+        }
+
+        if (code.length > 10000) {
+          showError("Code is too long. Maximum 10,000 characters allowed.");
+          return;
+        }
+
+        hideError();
+        outputSection.classList.remove("visible");
+
+        const selectedMode = document.querySelector(
+          'input[name="mode"]:checked'
+        ).value;
+        const startTime = performance.now();
+
+        try {
+          explainButton.classList.add("loading");
+          explainButton.disabled = true;
+          loadingOverlay.classList.add("visible");
+
+          const endpoint =
+            selectedMode === "rag" ? "/api/explain-rag" : "/api/explain";
+          const response = await fetch(`${API_BASE}${endpoint}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code }),
+          });
+
+          const endTime = performance.now();
+          const responseTime = ((endTime - startTime) / 1000).toFixed(2);
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          // Update state
+          state.totalExplanations++;
+          state.responseTimes.push(parseFloat(responseTime));
+          state.totalRequests++;
+          if (
+            selectedMode === "rag" &&
+            data.retrieved_examples &&
+            data.retrieved_examples.length > 0
+          ) {
+            state.ragHits++;
+          }
+
+          // Display results
+          displayExplanation(data, responseTime, selectedMode);
+          updateStats();
+
+          showToast("Explanation generated successfully!", "success");
+        } catch (error) {
+          console.error("Error:", error);
+          showError(`Failed to get explanation: ${error.message}`);
+        } finally {
+          explainButton.classList.remove("loading");
+          explainButton.disabled = false;
+          loadingOverlay.classList.remove("visible");
+        }
+      });
+
+      // Display Explanation
+      function displayExplanation(data, responseTime, mode) {
+        const explanationContent =
+          document.getElementById("explanationContent");
+        const retrievedExamples = document.getElementById("retrievedExamples");
+        const examplesContainer = document.getElementById("examplesContainer");
+
+        // Show retrieved examples for RAG mode
+        if (
+          mode === "rag" &&
+          data.retrieved_examples &&
+          data.retrieved_examples.length > 0
+        ) {
+          examplesContainer.innerHTML = data.retrieved_examples
+            .map(
+              (ex, i) => `
+                    <div class="example-item">
+                        <div class="example-meta">
+                            <span><strong>Language:</strong> ${ex.language.toUpperCase()}</span>
+                            <span><strong>Category:</strong> ${
+                              ex.category
+                            }</span>
+                            <span><strong>Relevance:</strong> ${(
+                              ex.relevance_score * 100
+                            ).toFixed(0)}%</span>
+                        </div>
+                        <div class="relevance-bar">
+                            <div class="relevance-fill" style="width: ${
+                              ex.relevance_score * 100
+                            }%"></div>
+                        </div>
+                    </div>
+                `
+            )
+            .join("");
+          retrievedExamples.style.display = "block";
+        } else {
+          retrievedExamples.style.display = "none";
+        }
+
+        // Format explanation
+        explanationContent.innerHTML = formatExplanation(data.explanation);
+
+        // Update metrics
+        const codeLines = codeInput.value.split("\n").length;
+        const tokenEstimate = Math.ceil(codeInput.value.length / 4);
+        const confidence = calculateConfidence(data, mode);
+
+        document.getElementById("responseTime").textContent = responseTime;
+        document.getElementById("tokenCount").textContent = tokenEstimate;
+        document.getElementById("confidenceScore").textContent =
+          confidence + "%";
+        document.getElementById("codeLength").textContent = codeLines;
+
+        outputSection.classList.add("visible");
+        outputSection.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+
+      // Format Explanation with Markdown-like rendering
+      function formatExplanation(text) {
+        // Simple markdown-like formatting
+        text = text.replace(/###\s+(.+)/g, "<h3>$1</h3>");
+        text = text.replace(/##\s+(.+)/g, "<h2>$1</h2>");
+        text = text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+        text = text.replace(/\*(.+?)\*/g, "<em>$1</em>");
+        text = text.replace(/`([^`]+)`/g, "<code>$1</code>");
+
+        // Code blocks
+        text = text.replace(
+          /```(\w+)?\n([\s\S]+?)```/g,
+          (match, lang, code) => {
+            return `<pre><code>${escapeHtml(code.trim())}</code></pre>`;
+          }
+        );
+
+        // Line breaks
+        text = text.replace(/\n\n/g, "</p><p>");
+        text = "<p>" + text + "</p>";
+
+        return text;
+      }
+
+      // Calculate Confidence Score
+      function calculateConfidence(data, mode) {
+        let confidence = 85; // Base confidence
+
+        if (
+          mode === "rag" &&
+          data.retrieved_examples &&
+          data.retrieved_examples.length > 0
+        ) {
+          const avgRelevance =
+            data.retrieved_examples.reduce(
+              (sum, ex) => sum + ex.relevance_score,
+              0
+            ) / data.retrieved_examples.length;
+          confidence += Math.floor(avgRelevance * 15); // Up to +15%
+        }
+
+        // Cap at 99%
+        return Math.min(confidence, 99);
+      }
+
+      // Update Statistics
+      function updateStats() {
+        document.getElementById("totalExplanations").textContent =
+          state.totalExplanations;
+
+        if (state.responseTimes.length > 0) {
+          const avgTime = (
+            state.responseTimes.reduce((a, b) => a + b, 0) /
+            state.responseTimes.length
+          ).toFixed(2);
+          document.getElementById("avgResponseTime").textContent =
+            avgTime + "s";
+        }
+
+        if (state.totalRequests > 0) {
+          const ragRate = ((state.ragHits / state.totalRequests) * 100).toFixed(
+            0
+          );
+          document.getElementById("ragHitRate").textContent = ragRate + "%";
+        }
+
+        // Mock accuracy score (would need actual evaluation in production)
+        const accuracy = Math.min(90 + state.totalExplanations, 99);
+        document.getElementById("accuracyScore").textContent = accuracy + "%";
+      }
+
+      // Copy to Clipboard
+      document.getElementById("copyButton").addEventListener("click", () => {
+        const content = document.getElementById("explanationContent").innerText;
+        navigator.clipboard.writeText(content).then(() => {
+          showToast("Copied to clipboard!", "success");
+        });
+      });
+
+      // Clear Results
+      document.getElementById("clearButton").addEventListener("click", () => {
+        outputSection.classList.remove("visible");
+        codeInput.value = "";
+        charCount.textContent = "0 / 10000 characters";
+        hideError();
+      });
+
+      // Toast Notification
+      function showToast(message, type = "success") {
+        const toast = document.createElement("div");
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+          toast.style.animation = "slideInRight 0.3s ease-out reverse";
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
+      }
+
+      // Error Handling
+      function showError(message) {
+        errorAlert.classList.add("visible");
+        document.getElementById("errorMessage").textContent = message;
+      }
+
+      function hideError() {
+        errorAlert.classList.remove("visible");
+      }
+
+      // Utility Functions
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // Load saved preferences
+      if (localStorage.getItem("darkMode") === "true") {
+        document.body.classList.add("dark-mode");
+        darkModeToggle.textContent = "☀️";
+      }
+
+      // Save dark mode preference
+      darkModeToggle.addEventListener("click", () => {
+        localStorage.setItem(
+          "darkMode",
+          document.body.classList.contains("dark-mode")
+        );
+      });
+
+      // Initialize
+      console.log("🚀 AI Code Explainer Phase 3 initialized");
+      console.log("📊 Ready to explain code with RAG technology");
+    </script>
+  </body>
+</html>

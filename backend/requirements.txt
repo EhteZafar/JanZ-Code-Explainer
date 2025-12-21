@@ -1,7 +1,74 @@
-fastapi==0.109.0
-uvicorn==0.27.0
-python-dotenv==1.0.0
-groq==0.4.1
-pydantic==2.5.3
-chromadb==0.4.22
-sentence-transformers==2.3.1
+# ============================================================
+# AI Code Explainer - Phase 3 Requirements
+# Python 3.13+ Required
+# ============================================================
+
+# Core Web Framework
+fastapi==0.109.0              # Modern web framework for APIs
+uvicorn==0.27.0               # ASGI server for FastAPI
+pydantic==2.5.3               # Data validation and settings
+
+# Environment & Configuration
+python-dotenv==1.0.0          # Environment variable management (.env files)
+
+# AI & LLM Integration
+groq==0.9.0                   # Groq API client for LLaMA 3.3 70B (stable version)
+httpx==0.27.0                 # HTTP client (pinned for Groq compatibility)
+
+# RAG System - Vector Database & Embeddings
+chromadb==0.4.22              # Vector database for semantic search
+sentence-transformers==2.3.1  # Text embedding models (all-MiniLM-L6-v2)
+
+# Machine Learning Dependencies
+torch>=2.0.0,<3.0.0           # PyTorch for ML models (CPU version)
+numpy>=1.24.0,<2.0.0          # Numerical computing (must be <2.0 for compatibility)
+
+# Additional Dependencies (auto-installed with above packages)
+# - transformers          # HuggingFace transformers (via sentence-transformers)
+# - tokenizers            # Fast tokenization (via sentence-transformers)
+# - huggingface-hub       # Model downloads (via sentence-transformers)
+# - chromadb-client       # ChromaDB client (via chromadb)
+# - onnxruntime           # ONNX runtime (via sentence-transformers)
+# - pillow                # Image processing (via sentence-transformers)
+# - tqdm                  # Progress bars (via sentence-transformers)
+# - scipy                 # Scientific computing (via sentence-transformers)
+# - scikit-learn          # ML utilities (via sentence-transformers)
+
+# ============================================================
+# Installation Instructions
+# ============================================================
+# 1. Create virtual environment:
+#    py -3.13 -m venv venv
+#    .\venv\Scripts\Activate.ps1
+#
+# 2. Upgrade pip:
+#    python -m pip install --upgrade pip
+#
+# 3. Install dependencies:
+#    pip install -r requirements.txt
+#
+# 4. Install PyTorch (CPU version explicitly):
+#    pip install torch --index-url https://download.pytorch.org/whl/cpu
+#
+# 5. Download embedding model:
+#    python download_model.py
+#
+# 6. Configure environment:
+#    Create .env file with GROQ_API_KEY=your_key_here
+#
+# 7. Populate database:
+#    python ingest_documents.py --reset
+# ============================================================
+
+# ============================================================
+# Troubleshooting
+# ============================================================
+# Issue: "numpy.float_ was removed in NumPy 2.0"
+# Fix: pip install "numpy<2.0" --force-reinstall
+#
+# Issue: "ModuleNotFoundError: sentence_transformers"
+# Fix: pip install "sentence-transformers==2.3.1" --force-reinstall
+#
+# Issue: "Microsoft Visual C++ required"
+# Fix: pip install chromadb --prefer-binary
+# ============================================================

@@ -1,0 +1,39 @@
+services:
+  # Backend API Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ai-code-explainer-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    volumes:
+      # Persist ChromaDB data
+      - chroma-data:/app/chroma_db
+      # Persist HuggingFace model cache
+      - model-cache:/app/.cache/huggingface
+      # Development mode: mount source code (comment out for production)
+      # - ./backend:/app
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+# Named volumes for persistent data
+volumes:
+  chroma-data:
+    driver: local
+  model-cache:
+    driver: local
+
+# Network for service communication
+networks:
+  app-network:
+    driver: bridge
