@@ -1,8 +1,8 @@
-# 🤖 AI Code Explainer - Phase 3
+# 🤖 AI Code Explainer - Phase 3 Enhanced
 
-An intelligent web application that provides instant, comprehensive explanations of code snippets using **LLaMA 3.3 70B Versatile** (via Groq API) enhanced with **Retrieval-Augmented Generation (RAG)** technology, performance monitoring, and ethical AI safeguards.
+An intelligent web application that provides instant, comprehensive explanations of code snippets using **LLaMA 3.3 70B Versatile** (via Groq API) enhanced with **Retrieval-Augmented Generation (RAG)** technology, performance monitoring, ethical AI safeguards, and **ChatGPT-style conversation history**.
 
-**Current Version**: 3.0.0 (Phase 3 Complete)
+**Current Version**: 3.1.0 (Phase 3 Complete + Chat History)
 
 ---
 
@@ -10,6 +10,7 @@ An intelligent web application that provides instant, comprehensive explanations
 
 - [Overview](#-overview)
 - [Phase 3 Enhancements](#-phase-3-enhancements)
+- [Chat History Feature](#-chat-history-feature-new)
 - [Features](#-features)
 - [Technologies Used](#-technologies-used)
 - [Project Architecture](#-project-architecture)
@@ -66,7 +67,114 @@ An intelligent web application that provides instant, comprehensive explanations
 
 ---
 
-## 🚀 Phase 3 Enhancements
+## � Chat History Feature (NEW)
+
+The latest enhancement brings a complete ChatGPT-style conversation management system to the AI Code Explainer.
+
+### ✨ Key Features
+
+- **💾 Persistent Chat History**: All conversations and messages automatically saved to SQLite database
+- **🎨 ChatGPT-Style Interface**: Modern sidebar with collapsible conversation list
+- **📝 Conversation Management**:
+  - ✅ Create new conversations with one click
+  - ✅ View all past conversations in sidebar with metadata
+  - ✅ Delete conversations individually (with confirmation)
+  - ✅ Auto-generated titles from first code snippet
+  - ✅ Message count and last-updated timestamps
+- **🔄 Dual Database Architecture**:
+  - **SQLite**: Stores conversation metadata and chat messages (`chat_history.db`)
+  - **ChromaDB**: Maintains vector embeddings for RAG functionality
+- **⚡ Real-Time Updates**: Instant conversation loading and seamless switching
+- **📱 Mobile-Responsive**: Collapsible sidebar with hamburger menu for mobile devices
+- **💬 Message Persistence**: All user prompts and AI responses automatically saved
+- **🎯 RAG Tracking**: Records which messages used RAG mode with example counts
+
+### 🗄️ Database Schema
+
+**Conversations Table:**
+
+```sql
+CREATE TABLE conversations (
+    id TEXT PRIMARY KEY,           -- UUID
+    title TEXT NOT NULL,           -- Auto-generated from first message
+    created_at TIMESTAMP,          -- Creation time
+    updated_at TIMESTAMP,          -- Last message time
+    message_count INTEGER          -- Total messages in conversation
+);
+```
+
+**Messages Table:**
+
+```sql
+CREATE TABLE messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    conversation_id TEXT,          -- Foreign key to conversations
+    role TEXT,                     -- 'user' or 'assistant'
+    content TEXT,                  -- Code or explanation
+    timestamp TIMESTAMP,           -- Message time
+    language TEXT,                 -- Programming language
+    rag_mode BOOLEAN,              -- Whether RAG was used
+    retrieved_count INTEGER,       -- Number of examples retrieved
+    FOREIGN KEY(conversation_id) REFERENCES conversations(id)
+);
+```
+
+### 🔌 New API Endpoints
+
+| Endpoint                        | Method | Description                                         |
+| ------------------------------- | ------ | --------------------------------------------------- |
+| `/api/conversations`            | POST   | Create new conversation (returns UUID)              |
+| `/api/conversations`            | GET    | Get all user conversations (with metadata)          |
+| `/api/conversations/{id}`       | GET    | Get all messages for a conversation                 |
+| `/api/conversations/{id}`       | DELETE | Delete conversation and all messages                |
+| `/api/conversations/{id}/title` | PUT    | Update conversation title                           |
+| `/api/chat/stats`               | GET    | Get chat statistics (total conversations, messages) |
+
+### 📁 New Backend Files
+
+- **`backend/chat_history.py`** (275 lines)
+
+  - SQLite database manager with singleton pattern
+  - Context manager for safe connection handling
+  - CRUD operations for conversations and messages
+  - Statistics and search functionality
+
+- **`backend/view_chat_history.py`** (327 lines)
+
+  - CLI tool for database inspection
+  - Multiple viewing modes (stats, conversations, messages, search)
+  - Pretty-printed table formatter
+  - Interactive menu system
+
+- **Database Location**: `backend/chroma_db/chat_history.db`
+
+### 🎨 UI Enhancements
+
+**Sidebar Features:**
+
+- 📋 **Conversation List**: Scrollable list with message counts and timestamps
+- ✨ **Active Highlight**: Visual indicator for current conversation
+- 🕒 **Smart Timestamps**: "Just now", "2h ago", "Yesterday" formatting
+- 🗑️ **Delete on Hover**: Delete button appears on conversation hover
+- 📱 **Mobile Toggle**: Hamburger menu for sidebar on small screens
+
+**Message Display:**
+
+- 💬 **Bubble Layout**: User messages on right (gradient), AI on left (white/dark)
+- 🏷️ **Metadata**: Timestamp, language, RAG mode badge
+- 📊 **RAG Indicator**: Green badge shows "RAG X examples" when RAG used
+- 🎯 **Smooth Animations**: Messages slide in with fade effect
+
+**Unified Interface:**
+
+- 🌓 **Dark Mode**: Toggle persists across sessions
+- ⚡ **Mode Selector**: Basic/RAG mode switching in header
+- 🌐 **12 Languages**: Comprehensive language dropdown
+- 🔔 **Toast Notifications**: Success/error feedback
+
+---
+
+## �🚀 Phase 3 Enhancements
 
 Phase 3 introduces comprehensive improvements across all aspects of the system:
 
