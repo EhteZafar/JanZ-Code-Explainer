@@ -3,8 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>JanZ Code Explainer - LLaMA 3.3 70B</title>
+    <title>JanZ Code Explainer - JanZ</title>
     <style>
+      :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        --success-color: #10b981;
+        --error-color: #ef4444;
+        --warning-color: #f59e0b;
+        --bg-light: #ffffff;
+        --bg-dark: #1a1a2e;
+        --text-light: #333333;
+        --text-dark: #e0e0e0;
+        --sidebar-width: 320px;
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
       * {
         margin: 0;
         padding: 0;
@@ -12,226 +26,332 @@
       }
 
       body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background: var(--primary-gradient);
         min-height: 100vh;
-        padding: 20px;
+        transition: var(--transition);
+        overflow: hidden;
+      }
+
+      body.dark-mode {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      }
+
+      /* Chat Layout */
+      .chat-layout {
         display: flex;
-        justify-content: center;
+        height: 100vh;
+        gap: 0;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: var(--sidebar-width);
+        background: var(--bg-light);
+        border-right: 2px solid #e0e0e0;
+        display: flex;
+        flex-direction: column;
+        transition: var(--transition);
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      body.dark-mode .sidebar {
+        background: var(--bg-dark);
+        border-right-color: #16213e;
+      }
+
+      .sidebar-header {
+        padding: 25px 20px;
+        border-bottom: 2px solid #e0e0e0;
+        background: var(--primary-gradient);
+        color: white;
+      }
+
+      body.dark-mode .sidebar-header {
+        border-bottom-color: #16213e;
+      }
+
+      .sidebar-header h3 {
+        margin-bottom: 15px;
+        font-size: 1.4em;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .btn-new-chat {
+        width: 100%;
+        padding: 14px;
+        background: white;
+        color: #667eea;
+        border: none;
+        border-radius: 10px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: var(--transition);
+        font-size: 1em;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      }
+
+      .btn-new-chat:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn-new-chat:active {
+        transform: translateY(0);
+      }
+
+      .conversation-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px;
+      }
+
+      .conversation-item {
+        padding: 16px;
+        margin-bottom: 10px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: var(--transition);
+        background: #f8f9fa;
+        border: 2px solid transparent;
+        position: relative;
+      }
+
+      body.dark-mode .conversation-item {
+        background: #0f3460;
+      }
+
+      .conversation-item:hover {
+        background: #e8e9eb;
+        transform: translateX(8px);
+        border-color: #667eea33;
+      }
+
+      body.dark-mode .conversation-item:hover {
+        background: #16213e;
+      }
+
+      .conversation-item.active {
+        border-color: #667eea;
+        background: linear-gradient(
+          135deg,
+          rgba(102, 126, 234, 0.15) 0%,
+          rgba(118, 75, 162, 0.15) 100%
+        );
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+      }
+
+      .conv-title {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #333;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.95em;
+      }
+
+      body.dark-mode .conv-title {
+        color: var(--text-dark);
+      }
+
+      .conv-meta {
+        font-size: 0.8em;
+        color: #666;
+        display: flex;
+        justify-content: space-between;
         align-items: center;
       }
 
-      .container {
+      body.dark-mode .conv-meta {
+        color: #aaa;
+      }
+
+      .conv-delete {
+        margin-top: 10px;
+        padding: 6px 12px;
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.75em;
+        cursor: pointer;
+        opacity: 0;
+        transition: var(--transition);
+      }
+
+      .conversation-item:hover .conv-delete {
+        opacity: 1;
+      }
+
+      .conv-delete:hover {
+        background: #dc2626;
+        transform: scale(1.05);
+      }
+
+      /* Main Chat Area */
+      .main-chat {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: var(--bg-light);
+        transition: var(--transition);
+      }
+
+      body.dark-mode .main-chat {
+        background: var(--bg-dark);
+        color: var(--text-dark);
+      }
+
+      /* Header */
+      .chat-header {
+        padding: 20px 30px;
+        border-bottom: 2px solid #e0e0e0;
         background: white;
-        border-radius: 20px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        max-width: 1200px;
-        width: 100%;
-        padding: 40px;
-        animation: fadeIn 0.5s ease-in;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
       }
 
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
+      body.dark-mode .chat-header {
+        background: #0f3460;
+        border-bottom-color: #16213e;
       }
 
-      header {
-        text-align: center;
-        margin-bottom: 30px;
+      .header-left {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
       }
 
-      h1 {
-        color: #333;
-        font-size: 2.5em;
-        margin-bottom: 10px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      .header-title h1 {
+        font-size: 1.8em;
+        background: var(--primary-gradient);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
+        display: flex;
+        align-items: center;
+        gap: 10px;
       }
 
-      .subtitle {
-        color: #666;
-        font-size: 1.1em;
-        margin-bottom: 5px;
-      }
-
-      .model-badge {
-        display: inline-block;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 8px 16px;
-        border-radius: 20px;
-        font-size: 0.9em;
-        font-weight: bold;
-        margin-top: 10px;
-      }
-
-      .phase-badge {
-        display: inline-block;
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        color: white;
-        padding: 6px 14px;
-        border-radius: 15px;
+      .header-subtitle {
         font-size: 0.85em;
+        color: #666;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      body.dark-mode .header-subtitle {
+        color: #aaa;
+      }
+
+      .badge {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.75em;
         font-weight: bold;
-        margin-left: 10px;
+        color: white;
+        background: var(--success-color);
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
       }
 
       .mode-selector {
         display: flex;
-        gap: 15px;
-        justify-content: center;
-        margin-top: 20px;
-        margin-bottom: 20px;
-      }
-
-      .mode-label {
-        display: flex;
-        align-items: center;
-        cursor: pointer;
-        padding: 12px 20px;
-        border: 2px solid #e0e0e0;
+        gap: 8px;
+        background: #f8f9fa;
+        padding: 6px;
         border-radius: 10px;
-        transition: all 0.3s;
-        background: white;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
       }
 
-      .mode-label:hover {
-        border-color: #667eea;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+      body.dark-mode .mode-selector {
+        background: #0f3460;
       }
 
-      .mode-label input[type="radio"] {
-        margin-right: 10px;
-        width: 18px;
-        height: 18px;
-        cursor: pointer;
-      }
-
-      .mode-label input[type="radio"]:checked + .mode-option {
-        color: #667eea;
-      }
-
-      .mode-label:has(input:checked) {
-        border-color: #667eea;
-        background: #f5f7ff;
-      }
-
-      .mode-option {
-        display: flex;
-        flex-direction: column;
-        gap: 3px;
-      }
-
-      .mode-option strong {
-        font-size: 1em;
-        color: #333;
-      }
-
-      .mode-option small {
-        font-size: 0.85em;
-        color: #666;
-      }
-
-      .input-section {
-        margin-bottom: 30px;
-      }
-
-      label {
-        display: block;
-        color: #333;
-        font-weight: 600;
-        margin-bottom: 10px;
-        font-size: 1.1em;
-      }
-
-      textarea {
-        width: 100%;
-        min-height: 250px;
-        padding: 15px;
-        border: 2px solid #ddd;
-        border-radius: 10px;
-        font-family: "Consolas", "Monaco", "Courier New", monospace;
-        font-size: 14px;
-        resize: vertical;
-        transition: border-color 0.3s, box-shadow 0.3s;
-        background: #f9f9f9;
-      }
-
-      textarea:focus {
-        outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        background: white;
-      }
-
-      .button-container {
-        display: flex;
-        gap: 15px;
-        margin-bottom: 30px;
-      }
-
-      button {
-        flex: 1;
-        padding: 15px 30px;
-        font-size: 1.1em;
-        font-weight: 600;
+      .mode-btn {
+        padding: 10px 18px;
         border: none;
+        border-radius: 8px;
+        background: transparent;
+        cursor: pointer;
+        font-weight: 600;
+        transition: var(--transition);
+        color: #666;
+        font-size: 0.9em;
+      }
+
+      body.dark-mode .mode-btn {
+        color: #aaa;
+      }
+
+      .mode-btn.active {
+        background: var(--primary-gradient);
+        color: white;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+      }
+
+      .mode-btn:hover:not(.active) {
+        background: rgba(102, 126, 234, 0.1);
+      }
+
+      .dark-mode-toggle {
+        background: rgba(102, 126, 234, 0.1);
+        border: none;
+        padding: 12px 16px;
         border-radius: 10px;
         cursor: pointer;
-        transition: all 0.3s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
+        font-size: 1.3em;
+        transition: var(--transition);
       }
 
-      .explain-btn {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+      .dark-mode-toggle:hover {
+        background: rgba(102, 126, 234, 0.2);
+        transform: rotate(20deg) scale(1.1);
       }
 
-      .explain-btn:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+      /* Messages Area */
+      .messages-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 30px;
+        background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
       }
 
-      .explain-btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
+      body.dark-mode .messages-container {
+        background: linear-gradient(180deg, #16213e 0%, #1a1a2e 100%);
       }
 
-      .clear-btn {
-        background: #f0f0f0;
-        color: #666;
-      }
-
-      .clear-btn:hover {
-        background: #e0e0e0;
-      }
-
-      .output-section {
-        display: none;
-        animation: slideIn 0.4s ease-out;
-      }
-
-      .output-section.visible {
-        display: block;
+      .message {
+        margin-bottom: 24px;
+        animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       @keyframes slideIn {
         from {
           opacity: 0;
-          transform: translateY(20px);
+          transform: translateY(15px);
         }
         to {
           opacity: 1;
@@ -239,495 +359,863 @@
         }
       }
 
-      .output-header {
+      .message-user {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
+        justify-content: flex-end;
       }
 
-      .output-title {
-        color: #333;
-        font-weight: 600;
-        font-size: 1.1em;
+      .message-assistant {
+        display: flex;
+        justify-content: flex-start;
       }
 
-      .copy-btn {
-        padding: 8px 16px;
-        background: #667eea;
+      .message-content {
+        max-width: 75%;
+        padding: 16px 20px;
+        border-radius: 16px;
+        position: relative;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .message-user .message-content {
+        background: var(--primary-gradient);
         color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
+        border-bottom-right-radius: 4px;
+      }
+
+      .message-assistant .message-content {
+        background: white;
+        color: #333;
+        border-bottom-left-radius: 4px;
+      }
+
+      body.dark-mode .message-assistant .message-content {
+        background: #0f3460;
+        color: var(--text-dark);
+      }
+
+      .message-code {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        font-family: "Consolas", "Monaco", "Fira Code", monospace;
+        padding: 16px;
+        border-radius: 10px;
+        overflow-x: auto;
+        margin-top: 10px;
         font-size: 0.9em;
-        transition: background 0.3s;
+        line-height: 1.6;
+        border: 1px solid rgba(255, 255, 255, 0.1);
       }
 
-      .copy-btn:hover {
-        background: #5568d3;
+      .message-meta {
+        font-size: 0.72em;
+        opacity: 0.8;
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
       }
 
-      .explanation-box {
-        background: #f9f9f9;
+      .rag-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        background: var(--success-color);
+        color: white;
+        border-radius: 8px;
+        font-size: 0.85em;
+        font-weight: 600;
+        margin-left: 6px;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        color: #999;
+      }
+
+      .empty-state h2 {
+        font-size: 2.2em;
+        margin-bottom: 12px;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .empty-state p {
+        font-size: 1.1em;
+        line-height: 1.6;
+      }
+
+      /* Input Area */
+      .input-area {
+        padding: 20px 30px;
+        border-top: 2px solid #e0e0e0;
+        background: white;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+      }
+
+      body.dark-mode .input-area {
+        background: #0f3460;
+        border-top-color: #16213e;
+      }
+
+      .input-wrapper {
+        display: flex;
+        gap: 15px;
+        align-items: flex-end;
+      }
+
+      .input-group {
+        flex: 1;
+      }
+
+      .language-select {
+        width: 160px;
+        padding: 12px;
         border: 2px solid #e0e0e0;
         border-radius: 10px;
-        padding: 20px;
-        line-height: 1.8;
-        color: #333;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-        max-height: 600px;
-        overflow-y: auto;
+        font-size: 0.9em;
+        transition: var(--transition);
+        background: white;
+        cursor: pointer;
+        font-weight: 500;
       }
 
-      .explanation-box h1,
-      .explanation-box h2,
-      .explanation-box h3 {
-        color: #667eea;
-        margin-top: 20px;
-        margin-bottom: 10px;
+      body.dark-mode .language-select {
+        background: #16213e;
+        color: var(--text-dark);
+        border-color: #0f3460;
       }
 
-      .explanation-box h1 {
-        font-size: 1.5em;
+      .code-input {
+        width: 100%;
+        min-height: 90px;
+        max-height: 250px;
+        padding: 14px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        font-family: "Consolas", "Monaco", "Fira Code", monospace;
+        font-size: 0.95em;
+        resize: vertical;
+        transition: var(--transition);
+        line-height: 1.6;
       }
 
-      .explanation-box h2 {
-        font-size: 1.3em;
+      body.dark-mode .code-input {
+        background: #16213e;
+        color: var(--text-dark);
+        border-color: #0f3460;
       }
 
-      .explanation-box h3 {
-        font-size: 1.1em;
+      .code-input:focus,
+      .language-select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
       }
 
-      .explanation-box code {
-        background: #e8e8e8;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-family: "Consolas", "Monaco", "Courier New", monospace;
+      .send-button {
+        padding: 14px 32px;
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: var(--transition);
+        white-space: nowrap;
+        font-size: 1em;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
       }
 
-      .explanation-box ul,
-      .explanation-box ol {
-        margin-left: 25px;
-        margin-top: 10px;
-        margin-bottom: 10px;
+      .send-button:hover:not(:disabled) {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
       }
 
-      .explanation-box li {
-        margin-bottom: 5px;
+      .send-button:active:not(:disabled) {
+        transform: translateY(-1px);
       }
 
-      .loading {
-        display: none;
-        text-align: center;
-        padding: 40px;
+      .send-button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        box-shadow: none;
       }
 
-      .loading.visible {
-        display: block;
-      }
-
-      .spinner {
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #667eea;
+      .send-button.loading::after {
+        content: "";
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        top: 50%;
+        left: 50%;
+        margin-left: -9px;
+        margin-top: -9px;
+        border: 2px solid #ffffff;
+        border-top-color: transparent;
         border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 20px;
+        animation: spin 0.6s linear infinite;
       }
 
       @keyframes spin {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
+        to {
           transform: rotate(360deg);
         }
       }
 
-      .loading-text {
-        color: #666;
-        font-size: 1.1em;
-      }
-
-      .error {
-        background: #fee;
-        border: 2px solid #fcc;
-        border-radius: 10px;
-        padding: 20px;
-        color: #c33;
-        display: none;
-        margin-top: 20px;
-      }
-
-      .error.visible {
-        display: block;
-        animation: slideIn 0.4s ease-out;
-      }
-
-      .error-title {
-        font-weight: 600;
-        margin-bottom: 10px;
-        font-size: 1.1em;
-      }
-
-      .examples {
-        margin-top: 30px;
-        padding-top: 30px;
-        border-top: 2px solid #e0e0e0;
-      }
-
-      .examples-title {
-        color: #333;
-        font-size: 1.2em;
-        margin-bottom: 15px;
-        font-weight: 600;
-      }
-
-      .example-buttons {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-
-      .example-btn {
-        padding: 10px 20px;
+      /* Toast Notifications */
+      .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 16px 24px;
         background: white;
-        border: 2px solid #667eea;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        animation: slideInRight 0.3s ease-out;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 250px;
+      }
+
+      @keyframes slideInRight {
+        from {
+          transform: translateX(400px);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      .toast.success {
+        border-left: 4px solid var(--success-color);
+      }
+
+      .toast.error {
+        border-left: 4px solid var(--error-color);
+      }
+
+      body.dark-mode .toast {
+        background: #0f3460;
+        color: var(--text-dark);
+      }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 5px;
+      }
+
+      body.dark-mode ::-webkit-scrollbar-track {
+        background: #0f3460;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 5px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: #555;
+      }
+
+      /* Explanation Formatting */
+      .message-assistant .message-content h2,
+      .message-assistant .message-content h3 {
         color: #667eea;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 0.9em;
-        transition: all 0.3s;
+        margin-top: 16px;
+        margin-bottom: 10px;
       }
 
-      .example-btn:hover {
-        background: #667eea;
-        color: white;
+      .message-assistant .message-content h2 {
+        font-size: 1.2em;
       }
 
-      footer {
-        margin-top: 40px;
-        text-align: center;
-        color: #999;
+      .message-assistant .message-content h3 {
+        font-size: 1.05em;
+      }
+
+      .message-assistant .message-content p {
+        margin-bottom: 12px;
+        line-height: 1.7;
+      }
+
+      .message-assistant .message-content code {
+        background: #f0f0f0;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-family: "Consolas", "Monaco", monospace;
         font-size: 0.9em;
+      }
+
+      body.dark-mode .message-assistant .message-content code {
+        background: #16213e;
+      }
+
+      .message-assistant .message-content pre {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        padding: 16px;
+        border-radius: 10px;
+        overflow-x: auto;
+        margin: 12px 0;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .message-assistant .message-content strong {
+        color: #667eea;
+        font-weight: 600;
+      }
+
+      body.dark-mode .message-assistant .message-content strong {
+        color: #8b9aee;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 1024px) {
+        .sidebar {
+          width: 280px;
+        }
       }
 
       @media (max-width: 768px) {
-        .container {
-          padding: 20px;
+        .sidebar {
+          position: fixed;
+          left: -320px;
+          height: 100vh;
+          z-index: 100;
+          box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
         }
 
-        h1 {
-          font-size: 1.8em;
+        .sidebar.visible {
+          left: 0;
         }
 
-        .button-container {
+        .header-title h1 {
+          font-size: 1.4em;
+        }
+
+        .mode-selector {
           flex-direction: column;
         }
 
-        .example-buttons {
+        .message-content {
+          max-width: 90%;
+        }
+
+        .input-wrapper {
           flex-direction: column;
+          align-items: stretch;
+        }
+
+        .language-select {
+          width: 100%;
+        }
+      }
+
+      /* Mobile Menu Toggle */
+      .menu-toggle {
+        display: none;
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 101;
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        padding: 12px 16px;
+        border-radius: 10px;
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      }
+
+      @media (max-width: 768px) {
+        .menu-toggle {
+          display: block;
+        }
+      }
+
+      /* Loading Spinner */
+      .loading-dots {
+        display: inline-flex;
+        gap: 6px;
+      }
+
+      .loading-dots span {
+        width: 8px;
+        height: 8px;
+        background: currentColor;
+        border-radius: 50%;
+        animation: bounce 1.4s infinite ease-in-out both;
+      }
+
+      .loading-dots span:nth-child(1) {
+        animation-delay: -0.32s;
+      }
+
+      .loading-dots span:nth-child(2) {
+        animation-delay: -0.16s;
+      }
+
+      @keyframes bounce {
+        0%,
+        80%,
+        100% {
+          transform: scale(0);
+        }
+        40% {
+          transform: scale(1);
         }
       }
     </style>
   </head>
   <body>
-    <div class="container">
-      <header>
-        <h1>🤖 JanZ Code Explainer</h1>
-        <p class="subtitle">Understand any code in seconds</p>
-        <span class="model-badge">Powered by LLaMA 3.3 70B Versatile</span>
-        <div class="phase-badge">Phase 2: RAG-Enhanced</div>
-      </header>
+    <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">
+      ☰
+    </button>
 
-      <div class="mode-selector">
-        <label class="mode-label">
-          <input type="radio" name="mode" value="basic" checked />
-          <span class="mode-option">
-            <strong>Basic Mode</strong>
-            <small>Standard AI explanation</small>
-          </span>
-        </label>
-        <label class="mode-label">
-          <input type="radio" name="mode" value="rag" />
-          <span class="mode-option">
-            <strong>RAG Mode</strong>
-            <small>Enhanced with similar examples</small>
-          </span>
-        </label>
-      </div>
-
-      <div class="input-section">
-        <label for="codeInput">📝 Paste your code here:</label>
-        <textarea
-          id="codeInput"
-          placeholder="# Paste any code snippet here...
-# Example:
-def quicksort(arr):
-    if len(arr) <= 1:
-        return arr
-    pivot = arr[len(arr) // 2]
-    left = [x for x in arr if x < pivot]
-    middle = [x for x in arr if x == pivot]
-    right = [x for x in arr if x > pivot]
-    return quicksort(left) + middle + quicksort(right)"
-        ></textarea>
-      </div>
-
-      <div class="button-container">
-        <button class="explain-btn" id="explainBtn" onclick="explainCode()">
-          <span>✨ Explain Code</span>
-        </button>
-        <button class="clear-btn" onclick="clearAll()">
-          <span>🗑️ Clear</span>
-        </button>
-      </div>
-
-      <div class="loading" id="loading">
-        <div class="spinner"></div>
-        <p class="loading-text">Analyzing code with LLaMA 3.3 70B...</p>
-      </div>
-
-      <div class="error" id="error">
-        <div class="error-title">❌ Error</div>
-        <p id="errorMessage"></p>
-      </div>
-
-      <div class="output-section" id="outputSection">
-        <div class="output-header">
-          <span class="output-title">💡 Explanation:</span>
-          <button class="copy-btn" onclick="copyExplanation()">📋 Copy</button>
+    <div class="chat-layout">
+      <!-- Sidebar -->
+      <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <h3>💬 Chat History</h3>
+          <button class="btn-new-chat" id="newChatBtn">+ New Chat</button>
         </div>
-        <div class="explanation-box" id="explanation"></div>
-      </div>
-
-      <div class="examples">
-        <p class="examples-title">🎯 Try an example:</p>
-        <div class="example-buttons">
-          <button class="example-btn" onclick="loadExample('python')">
-            Python
-          </button>
-          <button class="example-btn" onclick="loadExample('javascript')">
-            JavaScript
-          </button>
-          <button class="example-btn" onclick="loadExample('java')">
-            Java
-          </button>
-          <button class="example-btn" onclick="loadExample('cpp')">C++</button>
+        <div class="conversation-list" id="conversationList">
+          <div style="text-align: center; padding: 40px 20px; color: #999">
+            <p style="font-size: 2em; margin-bottom: 10px">📝</p>
+            <p>No conversations yet</p>
+          </div>
         </div>
       </div>
 
-      <footer>
-        <p>Built with FastAPI + LLaMA 3.3 70B via Groq</p>
-      </footer>
+      <!-- Main Chat -->
+      <div class="main-chat">
+        <!-- Header -->
+        <div class="chat-header">
+          <div class="header-left">
+            <div class="header-title">
+              <h1>🤖 JanZ Code Explainer</h1>
+            </div>
+            <div class="header-subtitle">
+              <span>Powered by LLaMA 3.3 70B with RAG Technology</span>
+              <span class="badge">● Live</span>
+            </div>
+          </div>
+          <div class="header-actions">
+            <div class="mode-selector">
+              <button class="mode-btn active" data-mode="basic">
+                ⚡ Basic
+              </button>
+              <button class="mode-btn" data-mode="rag">🎯 RAG</button>
+            </div>
+            <button class="dark-mode-toggle" id="darkModeToggle">🌙</button>
+          </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="messages-container" id="messagesContainer">
+          <div class="empty-state" id="emptyState">
+            <h2>👋 Welcome to JanZ Code Explainer</h2>
+            <p>Start a new conversation or select one from the sidebar</p>
+            <p style="margin-top: 20px; font-size: 0.9em">
+              Paste your code below and get instant explanations
+            </p>
+          </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area">
+          <div class="input-wrapper">
+            <select class="language-select" id="languageSelect">
+              <option value="python">🐍 Python</option>
+              <option value="javascript">📜 JavaScript</option>
+              <option value="java">☕ Java</option>
+              <option value="cpp">⚙️ C++</option>
+              <option value="csharp">🔷 C#</option>
+              <option value="php">🐘 PHP</option>
+              <option value="ruby">💎 Ruby</option>
+              <option value="go">🔵 Go</option>
+              <option value="rust">🦀 Rust</option>
+              <option value="typescript">💙 TypeScript</option>
+              <option value="kotlin">🟣 Kotlin</option>
+              <option value="swift">🧡 Swift</option>
+            </select>
+            <div class="input-group">
+              <textarea
+                class="code-input"
+                id="codeInput"
+                placeholder="Paste your code here... (Ctrl+Enter to send)"
+              ></textarea>
+            </div>
+            <button class="send-button" id="sendButton">🚀 Explain</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script>
-      const API_URL_BASIC = "http://localhost:8000/api/explain";
-      const API_URL_RAG = "http://localhost:8000/api/explain-rag";
+      const API_BASE = "http://localhost:8000";
 
-      const examples = {
-        python: `def binary_search(arr, target):
-    left, right = 0, len(arr) - 1
-    while left <= right:
-        mid = (left + right) // 2
-        if arr[mid] == target:
-            return mid
-        elif arr[mid] < target:
-            left = mid + 1
-        else:
-            right = mid - 1
-    return -1`,
+      // State
+      let currentConversationId = null;
+      let currentMode = "basic";
+      let conversations = [];
 
-        javascript: `async function fetchUserData(userId) {
-    try {
-        const response = await fetch(\`/api/users/\${userId}\`);
-        if (!response.ok) {
-            throw new Error('User not found');
-        }
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error('Error:', error);
-        return null;
-    }
-}`,
+      // DOM Elements
+      const conversationList = document.getElementById("conversationList");
+      const messagesContainer = document.getElementById("messagesContainer");
+      const emptyState = document.getElementById("emptyState");
+      const codeInput = document.getElementById("codeInput");
+      const languageSelect = document.getElementById("languageSelect");
+      const sendButton = document.getElementById("sendButton");
+      const newChatBtn = document.getElementById("newChatBtn");
+      const darkModeToggle = document.getElementById("darkModeToggle");
+      const modeBtns = document.querySelectorAll(".mode-btn");
+      const sidebar = document.getElementById("sidebar");
 
-        java: `public class BubbleSort {
-    public static void bubbleSort(int[] arr) {
-        int n = arr.length;
-        for (int i = 0; i < n - 1; i++) {
-            for (int j = 0; j < n - i - 1; j++) {
-                if (arr[j] > arr[j + 1]) {
-                    int temp = arr[j];
-                    arr[j] = arr[j + 1];
-                    arr[j + 1] = temp;
-                }
-            }
-        }
-    }
-}`,
+      // Initialize
+      document.addEventListener("DOMContentLoaded", () => {
+        loadConversations();
+        loadDarkMode();
+        setupEventListeners();
+      });
 
-        cpp: `#include <iostream>
-#include <vector>
+      // Event Listeners
+      function setupEventListeners() {
+        sendButton.addEventListener("click", handleSendMessage);
+        newChatBtn.addEventListener("click", createNewConversation);
+        darkModeToggle.addEventListener("click", toggleDarkMode);
 
-int fibonacci(int n) {
-    if (n <= 1) return n;
-    
-    std::vector<int> dp(n + 1);
-    dp[0] = 0;
-    dp[1] = 1;
-    
-    for (int i = 2; i <= n; i++) {
-        dp[i] = dp[i-1] + dp[i-2];
-    }
-    
-    return dp[n];
-}`,
-      };
-
-      function loadExample(language) {
-        document.getElementById("codeInput").value = examples[language];
-        hideError();
-        hideOutput();
-      }
-
-      function clearAll() {
-        document.getElementById("codeInput").value = "";
-        hideError();
-        hideOutput();
-      }
-
-      function showLoading() {
-        document.getElementById("loading").classList.add("visible");
-        document.getElementById("explainBtn").disabled = true;
-      }
-
-      function hideLoading() {
-        document.getElementById("loading").classList.remove("visible");
-        document.getElementById("explainBtn").disabled = false;
-      }
-
-      function showError(message) {
-        document.getElementById("errorMessage").textContent = message;
-        document.getElementById("error").classList.add("visible");
-      }
-
-      function hideError() {
-        document.getElementById("error").classList.remove("visible");
-      }
-
-      function showOutput(explanation, retrievedExamples = null) {
-        const explanationDiv = document.getElementById("explanation");
-
-        // Convert markdown-style formatting to HTML
-        let formatted = explanation
-          .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-          .replace(/\*(.+?)\*/g, "<em>$1</em>")
-          .replace(/`(.+?)`/g, "<code>$1</code>");
-
-        // Add retrieved examples info if using RAG mode
-        if (retrievedExamples && retrievedExamples.length > 0) {
-          let examplesHTML =
-            '<div style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #667eea;">';
-          examplesHTML +=
-            '<div style="font-weight: bold; color: #667eea; margin-bottom: 10px;">📚 Retrieved Similar Examples:</div>';
-
-          retrievedExamples.forEach((ex, idx) => {
-            examplesHTML += `<div style="margin-left: 10px; margin-bottom: 8px; font-size: 0.9em;">`;
-            examplesHTML += `<strong>${
-              idx + 1
-            }.</strong> ${ex.language.toUpperCase()} - ${ex.category}`;
-            if (ex.subcategory) examplesHTML += ` (${ex.subcategory})`;
-            examplesHTML += ` <span style="background: #667eea; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">${(
-              ex.relevance_score * 100
-            ).toFixed(0)}% match</span>`;
-            examplesHTML += `</div>`;
-          });
-
-          examplesHTML += "</div>";
-          formatted = examplesHTML + formatted;
-        }
-
-        explanationDiv.innerHTML = formatted;
-        document.getElementById("outputSection").classList.add("visible");
-
-        // Scroll to output
-        document
-          .getElementById("outputSection")
-          .scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }
-
-      function hideOutput() {
-        document.getElementById("outputSection").classList.remove("visible");
-      }
-
-      async function explainCode() {
-        const code = document.getElementById("codeInput").value.trim();
-
-        if (!code) {
-          showError("Please paste some code to explain.");
-          return;
-        }
-
-        // Get selected mode
-        const mode = document.querySelector('input[name="mode"]:checked').value;
-        const apiUrl = mode === "rag" ? API_URL_RAG : API_URL_BASIC;
-
-        hideError();
-        hideOutput();
-        showLoading();
-
-        try {
-          const response = await fetch(apiUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ code: code }),
-          });
-
-          const data = await response.json();
-
-          if (response.ok) {
-            // RAG mode returns retrieved_examples
-            showOutput(data.explanation, data.retrieved_examples || null);
-          } else {
-            showError(
-              data.detail || "Failed to generate explanation. Please try again."
+        modeBtns.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            modeBtns.forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+            currentMode = btn.dataset.mode;
+            showToast(
+              `Switched to ${currentMode.toUpperCase()} mode`,
+              "success"
             );
-          }
-        } catch (error) {
-          console.error("Error:", error);
-          showError(
-            "Could not connect to the server. Make sure the backend is running on http://localhost:8000"
-          );
-        } finally {
-          hideLoading();
-        }
-      }
+          });
+        });
 
-      function copyExplanation() {
-        const explanation = document.getElementById("explanation").innerText;
-        navigator.clipboard.writeText(explanation).then(() => {
-          const btn = event.target;
-          const originalText = btn.textContent;
-          btn.textContent = "✓ Copied!";
-          setTimeout(() => {
-            btn.textContent = originalText;
-          }, 2000);
+        // Send on Ctrl+Enter
+        codeInput.addEventListener("keydown", (e) => {
+          if (e.ctrlKey && e.key === "Enter") {
+            handleSendMessage();
+          }
         });
       }
 
-      // Allow Enter to submit (with Ctrl/Cmd modifier to avoid interfering with newlines)
-      document.getElementById("codeInput").addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-          explainCode();
+      // Mobile Sidebar Toggle
+      function toggleSidebar() {
+        sidebar.classList.toggle("visible");
+      }
+
+      // Load Conversations
+      async function loadConversations() {
+        try {
+          const response = await fetch(`${API_BASE}/api/conversations`);
+          const data = await response.json();
+          conversations = data.conversations;
+
+          if (conversations.length === 0) {
+            conversationList.innerHTML = `
+              <div style="text-align: center; padding: 40px 20px; color: #999;">
+                <p style="font-size: 2em; margin-bottom: 10px;">📝</p>
+                <p>No conversations yet</p>
+              </div>
+            `;
+            return;
+          }
+
+          conversationList.innerHTML = conversations
+            .map(
+              (conv) => `
+                <div class="conversation-item ${
+                  conv.id === currentConversationId ? "active" : ""
+                }" 
+                     onclick="loadConversation('${conv.id}')">
+                    <div class="conv-title">${escapeHtml(conv.title)}</div>
+                    <div class="conv-meta">
+                        <span>💬 ${conv.message_count} msgs</span>
+                        <span>🕒 ${formatDate(conv.updated_at)}</span>
+                    </div>
+                    <button class="conv-delete" onclick="deleteConversation(event, '${
+                      conv.id
+                    }')">
+                        🗑️ Delete
+                    </button>
+                </div>
+            `
+            )
+            .join("");
+        } catch (error) {
+          console.error("Error loading conversations:", error);
+          showToast("Failed to load conversations", "error");
         }
-      });
+      }
+
+      // Load Conversation Messages
+      async function loadConversation(conversationId) {
+        currentConversationId = conversationId;
+        emptyState.style.display = "none";
+
+        try {
+          const response = await fetch(
+            `${API_BASE}/api/conversations/${conversationId}`
+          );
+          const data = await response.json();
+
+          displayMessages(data.messages);
+          loadConversations();
+
+          // Close sidebar on mobile
+          if (window.innerWidth <= 768) {
+            sidebar.classList.remove("visible");
+          }
+        } catch (error) {
+          console.error("Error loading conversation:", error);
+          showToast("Failed to load conversation", "error");
+        }
+      }
+
+      // Display Messages
+      function displayMessages(messages) {
+        if (messages.length === 0) {
+          emptyState.style.display = "block";
+          return;
+        }
+
+        messagesContainer.innerHTML = messages
+          .map((msg) => {
+            const isUser = msg.role === "user";
+            const messageClass = isUser
+              ? "message message-user"
+              : "message message-assistant";
+
+            return `
+                <div class="${messageClass}">
+                    <div class="message-content">
+                        ${
+                          isUser
+                            ? `<div class="message-code">${escapeHtml(
+                                msg.content
+                              )}</div>`
+                            : `<div>${formatExplanation(msg.content)}</div>`
+                        }
+                        <div class="message-meta">
+                            ${formatTimestamp(msg.timestamp)}
+                            ${msg.language ? `• ${msg.language}` : ""}
+                            ${
+                              msg.rag_mode
+                                ? `<span class="rag-badge">RAG ${msg.retrieved_count} examples</span>`
+                                : ""
+                            }
+                        </div>
+                    </div>
+                </div>
+            `;
+          })
+          .join("");
+
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+
+      // Create New Conversation
+      async function createNewConversation() {
+        try {
+          const response = await fetch(`${API_BASE}/api/conversations`, {
+            method: "POST",
+          });
+          const data = await response.json();
+
+          currentConversationId = data.conversation_id;
+          emptyState.style.display = "block";
+          messagesContainer.innerHTML = "";
+          messagesContainer.appendChild(emptyState);
+
+          loadConversations();
+          codeInput.focus();
+          showToast("New conversation started 🎉", "success");
+        } catch (error) {
+          console.error("Error creating conversation:", error);
+          showToast("Failed to create conversation", "error");
+        }
+      }
+
+      // Delete Conversation
+      async function deleteConversation(event, conversationId) {
+        event.stopPropagation();
+
+        if (!confirm("Delete this conversation? This cannot be undone.")) {
+          return;
+        }
+
+        try {
+          await fetch(`${API_BASE}/api/conversations/${conversationId}`, {
+            method: "DELETE",
+          });
+
+          if (currentConversationId === conversationId) {
+            currentConversationId = null;
+            emptyState.style.display = "block";
+            messagesContainer.innerHTML = "";
+            messagesContainer.appendChild(emptyState);
+          }
+
+          loadConversations();
+          showToast("Conversation deleted", "success");
+        } catch (error) {
+          console.error("Error deleting conversation:", error);
+          showToast("Failed to delete conversation", "error");
+        }
+      }
+
+      // Send Message
+      async function handleSendMessage() {
+        const code = codeInput.value.trim();
+        if (!code) {
+          showToast("Please enter some code", "error");
+          codeInput.focus();
+          return;
+        }
+
+        const language = languageSelect.value;
+
+        sendButton.disabled = true;
+        sendButton.classList.add("loading");
+        sendButton.textContent = "";
+        codeInput.disabled = true;
+
+        try {
+          const endpoint =
+            currentMode === "rag" ? "/api/explain-rag" : "/api/explain";
+
+          const response = await fetch(`${API_BASE}${endpoint}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              code,
+              language,
+              conversation_id: currentConversationId,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          currentConversationId = data.conversation_id;
+
+          await loadConversation(currentConversationId);
+
+          codeInput.value = "";
+          codeInput.focus();
+
+          showToast("Explanation generated ✨", "success");
+        } catch (error) {
+          console.error("Error sending message:", error);
+          showToast("Failed to get explanation: " + error.message, "error");
+        } finally {
+          sendButton.disabled = false;
+          sendButton.classList.remove("loading");
+          sendButton.textContent = "🚀 Explain";
+          codeInput.disabled = false;
+        }
+      }
+
+      // Format Explanation
+      function formatExplanation(text) {
+        text = text.replace(/###\s+(.+)/g, "<h3>$1</h3>");
+        text = text.replace(/##\s+(.+)/g, "<h2>$1</h2>");
+        text = text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+        text = text.replace(/\*(.+?)\*/g, "<em>$1</em>");
+        text = text.replace(/`([^`]+)`/g, "<code>$1</code>");
+
+        text = text.replace(
+          /```(\w+)?\n([\s\S]+?)```/g,
+          (match, lang, code) => {
+            return `<pre><code>${escapeHtml(code.trim())}</code></pre>`;
+          }
+        );
+
+        text = text.replace(/\n\n/g, "</p><p>");
+        text = "<p>" + text + "</p>";
+
+        return text;
+      }
+
+      // Utility Functions
+      function formatDate(dateStr) {
+        const date = new Date(dateStr);
+        const now = new Date();
+        const diff = now - date;
+        const hours = diff / (1000 * 60 * 60);
+
+        if (hours < 1) return "Just now";
+        if (hours < 24) return `${Math.floor(hours)}h ago`;
+        if (hours < 48) return "Yesterday";
+        return date.toLocaleDateString();
+      }
+
+      function formatTimestamp(dateStr) {
+        const date = new Date(dateStr);
+        return date.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      function showToast(message, type = "success") {
+        const toast = document.createElement("div");
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `<span style="font-size: 1.2em;">${
+          type === "success" ? "✓" : "⚠"
+        }</span> ${message}`;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+          toast.style.animation = "slideInRight 0.3s ease-out reverse";
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
+      }
+
+      // Dark Mode
+      function loadDarkMode() {
+        if (localStorage.getItem("darkMode") === "true") {
+          document.body.classList.add("dark-mode");
+          darkModeToggle.textContent = "☀️";
+        }
+      }
+
+      function toggleDarkMode() {
+        document.body.classList.toggle("dark-mode");
+        const isDark = document.body.classList.contains("dark-mode");
+        darkModeToggle.textContent = isDark ? "☀️" : "🌙";
+        localStorage.setItem("darkMode", isDark);
+        showToast(`${isDark ? "Dark" : "Light"} mode activated`, "success");
+      }
+
+      console.log("🚀 JanZ Code Explainer initialized");
+      console.log("📊 Ready to explain code with RAG technology");
     </script>
   </body>
 </html>

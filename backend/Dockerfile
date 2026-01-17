@@ -18,6 +18,7 @@ ENV PYTHONUNBUFFERED=1 \
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
+    sqlite3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first (for better caching)

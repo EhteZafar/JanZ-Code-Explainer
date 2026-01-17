@@ -10,10 +10,13 @@ from pydantic import BaseModel, Field
 from typing import Optional, List, Dict
 import logging
 import time
+import json
+from datetime import datetime
 
 from groq_integration import get_code_explanation, test_groq_connection
 from performance_monitor import get_monitor
 from ethical_ai import get_ethical_guard
+from chat_history import get_chat_db
 # Lazy imports to avoid startup hang
 # from rag_system import get_rag_system
 # from fine_tuning import build_few_shot_prompt
@@ -41,17 +44,22 @@ app.add_middleware(
 # Initialize Phase 3 components
 performance_monitor = get_monitor()
 ethical_guard = get_ethical_guard()
+chat_db = get_chat_db()
 
 
 # Request/Response Models
 class CodeExplanationRequest(BaseModel):
     """Request model for code explanation"""
     code: str = Field(..., description="Code snippet to explain", min_length=1, max_length=10000)
+    language: str = Field(default="python", description="Programming language of the code")
+    conversation_id: Optional[str] = Field(None, description="Conversation ID for chat history")
     
     class Config:
         json_schema_extra = {
             "example": {
-                "code": "def fibonacci(n):\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)"
+                "code": "def fibonacci(n):\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)",
+                "language": "python",
+                "conversation_id": None
             }
         }
 
@@ -59,11 +67,13 @@ class CodeExplanationRequest(BaseModel):
 class CodeExplanationResponse(BaseModel):
     """Response model for code explanation"""
     explanation: str = Field(..., description="AI-generated explanation of the code")
+    conversation_id: str = Field(..., description="Conversation ID for this exchange")
     
     class Config:
         json_schema_extra = {
             "example": {
-                "explanation": "This code implements a recursive Fibonacci function..."
+                "explanation": "This code implements a recursive Fibonacci function...",
+                "conversation_id": "abc-123-def-456"
             }
         }
 
@@ -71,12 +81,14 @@ class CodeExplanationResponse(BaseModel):
 class RAGExplanationResponse(BaseModel):
     """Response model for RAG-enhanced code explanation"""
     explanation: str = Field(..., description="AI-generated explanation with RAG context")
+    conversation_id: str = Field(..., description="Conversation ID for this exchange")
     retrieved_examples: Optional[List[Dict]] = Field(None, description="Retrieved similar examples")
     
     class Config:
         json_schema_extra = {
             "example": {
                 "explanation": "This code implements...",
+                "conversation_id": "abc-123-def-456",
                 "retrieved_examples": [
                     {
                         "language": "python",
@@ -132,13 +144,33 @@ async def explain_code(request: CodeExplanationRequest):
     Explain code using LLaMA 3.3 70B Versatile (Basic Mode - Phase 3 Enhanced).
     
     Takes a code snippet and returns a comprehensive explanation with safety checks.
+    Now includes chat history persistence.
     """
     start_time = time.time()
     success = False
     error_msg = None
+    conversation_id = request.conversation_id
     
     try:
         logger.info(f"Received code explanation request (length: {len(request.code)} chars)")
+        
+        # Create new conversation if not provided
+        if not conversation_id:
+            # Auto-generate title from language
+            title = f"Explain {request.language} code"
+            conversation_id = chat_db.create_conversation(title=title)
+            logger.info(f"Created new conversation: {conversation_id}")
+        
+        # Save user message to chat history
+        chat_db.add_message(
+            conversation_id=conversation_id,
+            role="user",
+            content=request.code,
+            code_snippet=request.code,
+            language=request.language,
+            rag_mode=False,
+            retrieved_count=0
+        )
         
         # Phase 3: Sanitize code for safety
         sanitized_code, warnings = ethical_guard.sanitize_code(request.code)
@@ -157,6 +189,16 @@ async def explain_code(request: CodeExplanationRequest):
             logger.info("Successfully generated explanation")
             success = True
             
+            # Save assistant response to chat history
+            chat_db.add_message(
+                conversation_id=conversation_id,
+                role="assistant",
+                content=result["explanation"],
+                language=request.language,
+                rag_mode=False,
+                retrieved_count=0
+            )
+            
             response_time = time.time() - start_time
             performance_monitor.record_request(
                 mode='basic',
@@ -166,7 +208,10 @@ async def explain_code(request: CodeExplanationRequest):
                 retrieved_count=0
             )
             
-            return CodeExplanationResponse(explanation=result["explanation"])
+            return CodeExplanationResponse(
+                explanation=result["explanation"],
+                conversation_id=conversation_id
+            )
         else:
             error_msg = result.get("error", "Failed to generate explanation")
             logger.error(f"Failed to generate explanation: {error_msg}")
@@ -197,6 +242,7 @@ async def explain_code_rag(request: CodeExplanationRequest):
     
     Uses Retrieval-Augmented Generation with ChromaDB to find similar code examples,
     applies few-shot learning, ethical AI safeguards, and performance monitoring.
+    Now includes chat history persistence.
     
     Phase 3 Features:
     - Semantic search for similar code examples
@@ -205,11 +251,13 @@ async def explain_code_rag(request: CodeExplanationRequest):
     - Code sanitization and safety checks
     - Response validation
     - Performance tracking
+    - Chat history storage
     """
     start_time = time.time()
     success = False
     error_msg = None
     retrieved_count = 0
+    conversation_id = request.conversation_id
     
     try:
         # Lazy import to avoid startup hang
@@ -217,6 +265,13 @@ async def explain_code_rag(request: CodeExplanationRequest):
         from fine_tuning import build_few_shot_prompt
         
         logger.info(f"Received RAG explanation request (length: {len(request.code)} chars)")
+        
+        # Create new conversation if not provided
+        if not conversation_id:
+            # Auto-generate title from language
+            title = f"Explain {request.language} code (RAG)"
+            conversation_id = chat_db.create_conversation(title=title)
+            logger.info(f"Created new conversation: {conversation_id}")
         
         # Phase 3: Sanitize code for safety
         sanitized_code, warnings = ethical_guard.sanitize_code(request.code)
@@ -238,6 +293,24 @@ async def explain_code_rag(request: CodeExplanationRequest):
         
         retrieved_count = len(retrieved_docs)
         logger.info(f"Retrieved {retrieved_count} relevant examples")
+        
+        # Save user message to chat history with RAG context
+        rag_context_json = json.dumps([{
+            "language": doc["metadata"].get("language", "unknown"),
+            "category": doc["metadata"].get("category", "general"),
+            "relevance_score": doc["relevance_score"]
+        } for doc in retrieved_docs]) if retrieved_docs else None
+        
+        chat_db.add_message(
+            conversation_id=conversation_id,
+            role="user",
+            content=request.code,
+            code_snippet=request.code,
+            language=request.language,
+            rag_context=rag_context_json,
+            rag_mode=True,
+            retrieved_count=retrieved_count
+        )
         
         # Build RAG-enhanced prompt with retrieved context
         rag_prompt = rag.build_rag_prompt(
@@ -278,6 +351,16 @@ Provide a comprehensive explanation following the structure shown in the example
             logger.info("Successfully generated RAG-enhanced explanation")
             success = True
             
+            # Save assistant response to chat history
+            chat_db.add_message(
+                conversation_id=conversation_id,
+                role="assistant",
+                content=result["explanation"],
+                language=request.language,
+                rag_mode=True,
+                retrieved_count=retrieved_count
+            )
+            
             # Record performance metrics
             response_time = time.time() - start_time
             performance_monitor.record_request(
@@ -302,6 +385,7 @@ Provide a comprehensive explanation following the structure shown in the example
             
             return RAGExplanationResponse(
                 explanation=result["explanation"],
+                conversation_id=conversation_id,
                 retrieved_examples=retrieved_examples if retrieved_examples else None
             )
         else:
@@ -444,6 +528,167 @@ async def get_privacy_info():
         )
 
 
+# Chat History Endpoints
+@app.post("/api/conversations")
+async def create_conversation(user_id: str = "default"):
+    """
+    Create a new chat conversation.
+    
+    Returns the conversation ID that should be used in subsequent explain requests.
+    """
+    try:
+        conv_id = chat_db.create_conversation(user_id=user_id, title="New Chat")
+        logger.info(f"Created new conversation: {conv_id}")
+        return {
+            "conversation_id": conv_id,
+            "title": "New Chat",
+            "created_at": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error creating conversation: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create conversation: {str(e)}"
+        )
+
+
+@app.get("/api/conversations")
+async def get_conversations(user_id: str = "default", limit: int = 50):
+    """
+    Get all conversations for a user.
+    
+    Returns a list of conversations ordered by most recent activity.
+    """
+    try:
+        if limit < 1 or limit > 100:
+            raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
+        
+        conversations = chat_db.get_user_conversations(user_id=user_id, limit=limit)
+        return {
+            "conversations": conversations,
+            "count": len(conversations)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting conversations: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retrieve conversations: {str(e)}"
+        )
+
+
+@app.get("/api/conversations/{conversation_id}")
+async def get_conversation(conversation_id: str):
+    """
+    Get all messages in a specific conversation.
+    
+    Returns the conversation metadata and all messages ordered chronologically.
+    """
+    try:
+        # Get conversation metadata
+        conversation = chat_db.get_conversation_by_id(conversation_id)
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        
+        # Get all messages in the conversation
+        messages = chat_db.get_conversation_messages(conversation_id)
+        
+        return {
+            "conversation": conversation,
+            "messages": messages,
+            "message_count": len(messages)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting conversation {conversation_id}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retrieve conversation: {str(e)}"
+        )
+
+
+@app.delete("/api/conversations/{conversation_id}")
+async def delete_conversation(conversation_id: str):
+    """
+    Delete a conversation and all its messages.
+    
+    This action cannot be undone.
+    """
+    try:
+        # Verify conversation exists
+        conversation = chat_db.get_conversation_by_id(conversation_id)
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        
+        chat_db.delete_conversation(conversation_id)
+        logger.info(f"Deleted conversation: {conversation_id}")
+        
+        return {
+            "status": "deleted",
+            "conversation_id": conversation_id
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting conversation {conversation_id}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete conversation: {str(e)}"
+        )
+
+
+@app.put("/api/conversations/{conversation_id}/title")
+async def update_conversation_title(conversation_id: str, title: str):
+    """
+    Update the title of a conversation.
+    """
+    try:
+        # Verify conversation exists
+        conversation = chat_db.get_conversation_by_id(conversation_id)
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        
+        if not title or len(title) > 100:
+            raise HTTPException(status_code=400, detail="Title must be between 1 and 100 characters")
+        
+        chat_db.update_conversation_title(conversation_id, title)
+        logger.info(f"Updated conversation title: {conversation_id} -> {title}")
+        
+        return {
+            "status": "updated",
+            "conversation_id": conversation_id,
+            "title": title
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating conversation title {conversation_id}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update conversation title: {str(e)}"
+        )
+
+
+@app.get("/api/chat/stats")
+async def get_chat_statistics():
+    """
+    Get chat history database statistics.
+    
+    Returns aggregate data about conversations and messages.
+    """
+    try:
+        stats = chat_db.get_statistics()
+        return stats
+    except Exception as e:
+        logger.error(f"Error getting chat statistics: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retrieve chat statistics: {str(e)}"
+        )
+
+
 @app.post("/api/ethics/validate-code")
 async def validate_code_safety(request: CodeExplanationRequest):
     """
@@ -490,11 +735,13 @@ async def startup_event():
     # Initialize Phase 3 components
     logger.info("✓ Performance monitoring active")
     logger.info("✓ Ethical AI safeguards enabled")
+    logger.info("✓ Chat history database initialized")
     
     # RAG system uses lazy loading (loads on first use)
     logger.info("✓ RAG system configured (lazy loading - will initialize on first use)")
     logger.info("\nPhase 3 Endpoints:")
     logger.info("  - Explanation: /api/explain, /api/explain-rag")
+    logger.info("  - Chat History: /api/conversations, /api/chat/stats")
     logger.info("  - Metrics: /api/metrics/performance, /api/metrics/history")
     logger.info("  - Ethics: /api/ethics/privacy, /api/ethics/validate-code")
     logger.info("  - RAG: /api/rag/stats")

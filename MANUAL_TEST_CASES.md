@@ -181,17 +181,17 @@ Invoke-RestMethod -Method Post -Uri http://localhost:8000/api/explain -Body $bod
 ```powershell
 $body = @{
     code = @"
-import asyncio
+    import asyncio
 
-async def fetch_data(url):
-    await asyncio.sleep(1)
-    return f"Data from {url}"
+    async def fetch_data(url):
+        await asyncio.sleep(1)
+        return f"Data from {url}"
 
-async def main():
-    result = await fetch_data("https://api.example.com")
-    print(result)
+    async def main():
+        result = await fetch_data("https://api.example.com")
+        print(result)
 
-asyncio.run(main())
+    asyncio.run(main())
 "@
     language = "python"
 } | ConvertTo-Json
